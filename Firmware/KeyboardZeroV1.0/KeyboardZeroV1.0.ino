@@ -1,6 +1,15 @@
 #include <Keypad.h>
 #include <Keyboard.h>
 
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+
 const String name = "KeyboardZero v1.0";
 const byte width = 6;
 const byte height = 4;
@@ -13,6 +22,9 @@ bool previousPinCorrect = false;
 char currentPinChar = "";
 
 int lockPressCount = 0;
+
+int previousTime = 0;
+int isDisplayOnTimer = 0;
 
 char hexaKeys[height][width] = {
   {'0','1','2','3','4','5'},
@@ -32,11 +44,31 @@ void setup() {
   Serial.begin(9600);
   Keyboard.begin();
 
- 
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setRotation(2);
+  display.clearDisplay();
+  // Clear the buffer.
+
+  display.clearDisplay();
+  displayShowText(1,15,0, "Keyboard Zero");
+  displayShowText(2, 30, 15, "V1.5");
+  display.display();
+
+  delay(2000);
+  display.clearDisplay();
   
 }
 
 void loop() {
+  int currentTime = millis();
+  isDisplayOnTimer+= currentTime - previousTime;
+  previousTime = currentTime;
+  
+  if (isDisplayOnTimer > 30000) {
+    display.clearDisplay();
+    display.display();
+  } 
+
   customKeypad.getKeys();
   return;
   char customKey = customKeypad.getKey();
@@ -82,6 +114,8 @@ void loop() {
     }
     Keyboard.releaseAll(); 
   }
+
+  
 }
 
 void handleAcknowledge(){
@@ -93,7 +127,13 @@ void handleAcknowledge(){
 void keypadEvent(KeypadEvent key, KeyState kpadState ){
     switch (kpadState){
     case PRESSED:
-        if (locked) checkPin(key, kpadState);
+        if (locked) {
+          checkPin(key, kpadState);
+
+          display.clearDisplay();
+          displayShowText(2,10,0, "Locked");
+          display.display();
+        }
         else keyPressed(key);
         break;
 
@@ -129,7 +169,11 @@ void checkPin(KeypadEvent key, KeyState kpadState ){
       currentPinChar = "";
       previousPinCorrect = false;
       locked = false;
-      printText("Kezboard unlocked\n");
+      
+      display.clearDisplay();
+      displayShowText(2,10,0, "Unlocked");
+      display.display();
+
       unlocked = true;
       lockPressCount = 0;
     }
@@ -139,7 +183,7 @@ void checkPin(KeypadEvent key, KeyState kpadState ){
       
     }
     if (!previousPinCorrect && key == 'c' && !unlocked){
-      printText("Kezboard locked, please enter pin and press SKULL!\n");
+      ("Kezboard locked, please enter pin and press SKULL!");
     }
     
 }
@@ -165,26 +209,45 @@ void keyPressed(KeypadEvent key){
     Keyboard.print("\n");
   }
   else if (key == 'e'){
-    Keyboard.print("deploy\n");
+    Keyboard.print("deploz\n");
   }
   //4. row
   else if (key == 'i'){
     moveToDesktop('1');
+
+    display.clearDisplay();
+    displayShowText(2,10,0, "Display 1\0");
+    display.display();
   }
   else if (key == 'j'){
     moveToDesktop('2');
+    display.clearDisplay();
+    displayShowText(2,10,0, "Display 2\0");
+    display.display();
   }
   else if (key == 'k'){
     moveToDesktop('3');
+    display.clearDisplay();
+    displayShowText(2,10,0, "Display 3\0");
+    display.display();
   }
   else if (key == 'l'){
     moveToDesktop('4');
+    display.clearDisplay();
+    displayShowText(2,10,0, "Display 4\0");
+    display.display();
   }
   else if (key == 'm'){
     moveToDesktop('5');
+    display.clearDisplay();
+    displayShowText(2,10,0, "Display 5\0");
+    display.display();
   }
   else if (key == 'n'){
     moveToDesktop('6');
+    display.clearDisplay();
+    displayShowText(2,10,0, "Display 6\0");
+    display.display();
   }
   
 }
@@ -197,6 +260,8 @@ void moveToDesktop(char desktop){
     Keyboard.release(KEY_LEFT_CTRL);
     Keyboard.release(KEY_LEFT_ALT);
     Keyboard.release(desktop);
+
+   
 }
 
 void backSpace(int count, int delayTime){
@@ -212,4 +277,12 @@ void backSpace(int count, int delayTime){
 void printText(char* text){
   Keyboard.print(text);
   backSpace(strlen(text), 1000);
+}
+
+void displayShowText(int size, int x, int y, String text){
+    display.setTextSize(size);
+    display.setTextColor(WHITE);
+    display.setCursor(x,y);
+    display.println(text);
+    isDisplayOnTimer = 0;
 }
