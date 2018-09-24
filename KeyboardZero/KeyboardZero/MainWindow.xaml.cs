@@ -153,6 +153,12 @@ namespace KeyboardZero
                             showClipboardMessage(clipboardStack[3]);
                         });
                         break;
+                    case "4":
+                        keyboardSimulator.KeyPress(VirtualKeyCode.MEDIA_PREV_TRACK);
+                        break;
+                    case "5":
+                        keyboardSimulator.KeyPress(VirtualKeyCode.MEDIA_NEXT_TRACK);
+                        break;
                     case "d":
                         System.Diagnostics.Process.Start(@"C:\Users\pevec\AppData\Local\hyper\Hyper.exe");
                         break;
@@ -167,6 +173,12 @@ namespace KeyboardZero
                         break;
                     case "l":
                         keyboardSimulator.ModifiedKeyStroke(new[] { VirtualKeyCode.LCONTROL, VirtualKeyCode.LMENU }, VirtualKeyCode.VK_4);
+                        break;
+                    case "m":
+                        keyboardSimulator.ModifiedKeyStroke(new[] { VirtualKeyCode.LCONTROL, VirtualKeyCode.LMENU }, VirtualKeyCode.VK_5);
+                        break;
+                    case "n":
+                        keyboardSimulator.ModifiedKeyStroke(new[] { VirtualKeyCode.LCONTROL, VirtualKeyCode.LMENU }, VirtualKeyCode.VK_6);
                         break;
 
                 }
@@ -240,6 +252,7 @@ namespace KeyboardZero
                 clipboardStack[1] = clipboardStack[0];
                 clipboardStack[0] = Clipboard.GetText();
                 Console.WriteLine(clipboardStack[0]);
+                keyboardConnection.SendMessage(KeyboardConnection.SendTypes.ClipboardPush, clipboardStack[0], 0);
             }
             else if(internalClipboardChange > 0)
             {
@@ -250,6 +263,7 @@ namespace KeyboardZero
 
         private void showClipboardMessage(string text)
         {
+            return;
             var message = new ClipboardMessage(text);
             message.Top = 10;
             message.Left = 10;

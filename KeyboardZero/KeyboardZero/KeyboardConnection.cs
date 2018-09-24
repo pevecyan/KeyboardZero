@@ -20,6 +20,8 @@ namespace KeyboardZero
 
         public event Action<string> KeyPressed;
 
+        public enum SendTypes { Clipboard, ClipboardPush }
+
         public void FindKeyboard()
         {
             var serialNames = SerialPort.GetPortNames();
@@ -59,11 +61,49 @@ namespace KeyboardZero
             }
         }
 
+
+   
         private void CommandReceived(object sender, SerialDataReceivedEventArgs e)
         {
 
-            var key = (sender as SerialPort).ReadExisting();
-            KeyPressed?.Invoke(key);
+            var data = (sender as SerialPort).ReadExisting();
+            //Console.WriteLine(data);
+            string[] keys = data.Split('@');
+            keys.All(key =>
+            {
+                if (key.Length > 0)
+                {
+                    string[] parts = key.Split(':');
+                    if (parts.Length > 0)
+                    {
+                        if (parts[0] == "P")
+                        {
+                            KeyPressed?.Invoke(parts[1]);
+                        }
+                    }
+                }
+                return true;
+            });
+            //KeyPressed?.Invoke(key);
+        }
+
+        public void SendMessage(SendTypes sendType, String message, int index)
+        {
+            if (ActiveSerialPort.IsOpen)
+            {
+                if (sendType == SendTypes.Clipboard && message.Length > 0)
+                {
+                    message = message.Replace('\n', ' ').Replace('\r', ' ');
+                    ActiveSerialPort.Write("CPB:"+index+":" + message.Substring(0, Math.Min(10, message.Length)));
+                    Console.WriteLine("CPB:" + index + ":" + message.Substring(0, Math.Min(10, message.Length)));
+                }
+                else if (sendType == SendTypes.ClipboardPush)
+                {
+                    message = message.Replace('\n', ' ').Replace('\r', ' ');
+                    ActiveSerialPort.Write("CPBP:" + index + ":" + message.Substring(0, Math.Min(20, message.Length)));
+                    Console.WriteLine("CPB:" + index + ":" + message.Substring(0, Math.Min(10, message.Length)));
+                }
+            } 
         }
     }
 }

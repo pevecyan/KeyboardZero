@@ -33,6 +33,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>keyboard_5YN_icon.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -107,6 +110,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Content\keyboard.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="keyboard_5YN_icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -26,6 +26,8 @@ int lockPressCount = 0;
 int previousTime = 0;
 int isDisplayOnTimer = 0;
 
+String  clipboard [4] = {"", "", "", ""}; 
+
 char hexaKeys[height][width] = {
   {'0','1','2','3','4','5'},
   {'6','7','8','9','a','b'},
@@ -70,55 +72,44 @@ void loop() {
   } 
 
   customKeypad.getKeys();
-  return;
-  char customKey = customKeypad.getKey();
-  
+
   if(Serial.available() > 0){
     String msg = Serial.readString();
     if(msg=="ACK")
       handleAcknowledge();
-    if(msg == "OK" && ackMode){
+    else if(msg == "OK" && ackMode){
         ackMode = false;
         customProfile = true;
+        display.clearDisplay();
+        displayShowText(2,0,0, "Connected");
+        display.display();
+    } 
+    
+    if (msg.startsWith("CPB:0:")){
+        String text = msg.substring(6);
+        showClipboard(0, text);
+    } else if (msg.startsWith("CPB:1:")){
+        String text = msg.substring(6);
+        showClipboard(1, text);
+    }  else if (msg.startsWith("CPB:2:")){
+        String text = msg.substring(6);
+        showClipboard(2, text);
+    }  else if (msg.startsWith("CPB:3:")){
+        String text = msg.substring(6);
+        showClipboard(3, text);
+    } else if (msg.startsWith("CPBP:0:")){
+        String text = msg.substring(7);
+        pushClipboard( text);
     }
   }
-
-  if(customProfile && customKey){
-    Serial.print(customKey);
-  }
-  else if(customKey){
-    switch(customKey){
-      case '0':
-        Keyboard.press(KEY_ESC);
-        break;
-      case 'i':
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.press(KEY_LEFT_ALT);
-        Keyboard.press('1');
-        break;
-      case 'j':
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.press(KEY_LEFT_ALT);
-        Keyboard.press('2');
-        break;
-      case 'k':
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.press(KEY_LEFT_ALT);
-        Keyboard.press('3');
-        break;
-      case 'l':
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.press(KEY_LEFT_ALT);
-        Keyboard.press('4');
-        break;
-    }
-    Keyboard.releaseAll(); 
-  }
-
   
 }
 
 void handleAcknowledge(){
+  display.clearDisplay();
+  displayShowText(2,0,0, "Connecting");
+  display.display();
+
   ackMode = true;
   Serial.print(name+":"+width+":"+height);
 }
@@ -128,11 +119,14 @@ void keypadEvent(KeypadEvent key, KeyState kpadState ){
     switch (kpadState){
     case PRESSED:
         if (locked) {
-          checkPin(key, kpadState);
 
           display.clearDisplay();
           displayShowText(2,10,0, "Locked");
           display.display();
+          
+          checkPin(key, kpadState);
+
+          
         }
         else keyPressed(key);
         break;
@@ -170,12 +164,14 @@ void checkPin(KeypadEvent key, KeyState kpadState ){
       previousPinCorrect = false;
       locked = false;
       
-      display.clearDisplay();
-      displayShowText(2,10,0, "Unlocked");
-      display.display();
+      
 
       unlocked = true;
       lockPressCount = 0;
+
+      display.clearDisplay();
+      displayShowText(2,10,0, "Unlocked");
+      display.display();
     }
     else {
       currentPinChar = "";
@@ -189,6 +185,23 @@ void checkPin(KeypadEvent key, KeyState kpadState ){
 }
 
 void keyPressed(KeypadEvent key){
+
+  if (customProfile){
+    
+      String pressed = "P:";
+      pressed+=key;
+      pressed+="@\0";
+      Serial.print(pressed);
+
+      if (key == '0'){ showClipboard(0, clipboard[0]);}
+      else if (key == '1'){ showClipboard(1, clipboard[1]);}
+      else if (key == '2'){ showClipboard(2, clipboard[2]);}
+      else if (key == '3'){ showClipboard(3, clipboard[3]);}
+
+      
+
+      return;
+  }
   //First Row
   if (key == '0'){
 
@@ -260,8 +273,6 @@ void moveToDesktop(char desktop){
     Keyboard.release(KEY_LEFT_CTRL);
     Keyboard.release(KEY_LEFT_ALT);
     Keyboard.release(desktop);
-
-   
 }
 
 void backSpace(int count, int delayTime){
@@ -272,7 +283,6 @@ void backSpace(int count, int delayTime){
 
   }
 }
-
 
 void printText(char* text){
   Keyboard.print(text);
@@ -285,4 +295,49 @@ void displayShowText(int size, int x, int y, String text){
     display.setCursor(x,y);
     display.println(text);
     isDisplayOnTimer = 0;
+}
+
+void showClipboard(int index, String text){
+    clipboard[index] = text;
+
+    display.clearDisplay();
+    displayShowText(1,8,0, clipboard[0]);
+    displayShowText(1,8,7, clipboard[1]);
+    displayShowText(1,8,14, clipboard[2]);
+    displayShowText(1,8,21, clipboard[3]);
+
+    if (index == 0){
+       drawArrow(0);
+    } else if (index == 1){
+       drawArrow(7);
+    } else if (index == 2){
+       drawArrow(14);
+    } else if (index == 3){
+       drawArrow(21);
+    }
+
+    display.display();
+}
+
+void drawArrow(int y){
+  display.drawPixel(1, 1 + y, WHITE);
+  display.drawPixel(1, 2 + y, WHITE);
+  display.drawPixel(1, 3 + y, WHITE);
+  display.drawPixel(1, 4 + y, WHITE);
+  display.drawPixel(1, 5 + y, WHITE);
+
+  display.drawPixel(2, 2 + y, WHITE);
+  display.drawPixel(2, 3 + y, WHITE);
+  display.drawPixel(2, 4 + y, WHITE);
+
+  display.drawPixel(3, 3 + y, WHITE);
+
+
+}
+
+void pushClipboard(String text){
+  clipboard[3] = clipboard[2];
+  clipboard[2] = clipboard[1];
+  clipboard[1] = clipboard[0];
+  showClipboard(0, text);
 }
